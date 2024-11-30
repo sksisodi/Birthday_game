@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>QR Code Scanner Web App</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            height: 100vh;
+        }
+        #video {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 15px;
+            background: #000;
+        }
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
+            word-wrap: break-word;
+            width: 90%;
+            max-width: 600px;
+            text-align: center;
+        }
+        #canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="video" autoplay playsinline></video>
+    <div id="output">Initializing camera...</div>
+    <canvas id="canvas"></canvas>
+
+    <!-- Include jsQR library -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const canvas = canvasElement.getContext('2d');
+        const output = document.getElementById('output');
+        
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(function(stream) {
+                video.srcObject = stream;
+                video.setAttribute('playsinline', true); // Required to tell iOS safari we don't want fullscreen
+                video.play();
+                requestAnimationFrame(tick);
+            })
+            .catch(function(err) {
+                console.error(err);
+                output.textContent = "Error accessing camera: " + err.message;
+            });
+        </script>
+        <script>
+            function tick() {
+                if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvasElement.height = video.videoHeight;
+                    canvasElement.width = video.videoWidth;
+                    canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            
+                    const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+                    if (code) {
+                        // QR code detected
+                        drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+                        drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+                        drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+                        drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+            
+                        output.innerText = `QR Code Data: ${code.data}`;
+                        // Stop the camera stream if you want to stop scanning after the first QR code is detected
+                        // video.srcObject.getTracks().forEach(track => track.stop());
+                    } else {
+                        output.innerText = "No QR code detected.";
+                    }
+                }
+                requestAnimationFrame(tick);
+            }
+            
+            function drawLine(begin, end, color) {
+                canvas.beginPath();
+                canvas.moveTo(begin.x, begin.y);
+                canvas.lineTo(end.x, end.y);
+                canvas.lineWidth = 4;
+                canvas.strokeStyle = color;
+                canvas.stroke();
+            }
+            </script>
+            <!-- Include jsQR library -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<script>
+navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(function(stream) {
+        video.srcObject = stream;
+        video.setAttribute('playsinline', true); // Required to tell iOS safari we don't want fullscreen
+        video.play();
+        output.innerText = "Scanning for QR code...";
+        requestAnimationFrame(tick);
+    })
+    .catch(function(err) {
+        console.error(err);
+        output.textContent = "Error accessing camera: " + err.message;
+    });
+
+function tick() {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvasElement.height = video.videoHeight;
+        canvasElement.width = video.videoWidth;
+        canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+
+        const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+        if (code) {
+            // QR code detected
+            drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+            drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+            drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+            drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+
+            output.innerText = `QR Code Data: ${code.data}`;
+            const fileName = `${code.data}.png`;
+            downloadInage(canvasElement,filename); //"qr_code_image.png");
+            // Stop scanning if desired
+            // video.srcObject.getTracks().forEach(track => track.stop());
+        } else {
+            output.innerText = "No QR code detected.";
+        }
+    }
+    requestAnimationFrame(tick);
+}
+
+function drawLine(begin, end, color) {
+    canvas.beginPath();
+    canvas.moveTo(begin.x, begin.y);
+    canvas.lineTo(end.x, end.y);
+    canvas.lineWidth = 4;
+    canvas.strokeStyle = color;
+    canvas.stroke();
+}
+function downloadImage(canvasElement, fileName) {
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = canvasElement.toDataURL("image/png");
+        link.click();
+    }
+</script>
+
+</body>
+</html>
